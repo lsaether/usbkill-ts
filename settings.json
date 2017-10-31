@@ -1,0 +1,19 @@
+{
+    "logFile": "hell0",
+    "removeFileCmd": "cmd",
+    "meltUsbKill": false,
+    "foldersToRemove": [
+        "one",
+        "two"
+    ],
+    "killCommands": [
+        "one",
+        "two"
+    ],
+    "doSync": false,
+    "doWipeRam": false,
+    "doWipeSwap": false,
+    "wipeRamCmd": "blaj",
+    "wipeSwapCmd": "blah",
+    "shutDown": false
+}

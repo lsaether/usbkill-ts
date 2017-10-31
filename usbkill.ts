@@ -54,6 +54,13 @@ interface Settings {
     removeFileCmd?: string,
     meltUsbKill?: boolean,
     foldersToRemove?: string[],
+    killCommands?: string[],
+    doSync?: boolean,
+    doWipeRam?: boolean,
+    doWipeSwap?: boolean,
+    wipeRamCmd?: string,
+    wipeSwapCmd?: string,
+    shutDown?: boolean,
 }
 
 const log = (settings: Settings, msg: string) => {
@@ -79,8 +86,138 @@ const shred = (settings: Settings) => {
         settings.foldersToRemove!.push(usbKillFile);
     }
 
+    /// Remove files and folders.
+    settings.foldersToRemove!.forEach((file) => {
+        child_process.exec(`rm -r ${file}`);
+    })
+}
+
+const killComputer = (settings: Settings) => {
+    /// Log what is happening.
+    if (!settings.meltUsbKill) {
+        /// Don't waste time logging what will be destroyed.
+        log(settings, 'Detected an USB change. Dumping list of connected devices and killing the computer...');
+    }
+
+    /// Shred as specified in settings.
+    shred(settings);
+
+    /// Execute the kill commands in order.
+    settings.killCommands!.forEach((cmd) => child_process.exec(cmd));
+
+    if (settings.doSync) {
+        child_process.exec('sync');
+    } else {
+        /// If syncing is turned off because it might turn off then sleep for 5ms.
+        /// This will still allow syncing in most cases.
+        setTimeout(() => console.log(''), 5);
+    }
+
+    /// Wipe RAM and/or swap.
+    if (settings.doWipeRam) {
+        child_process.exec(settings.wipeRamCmd!);
+    }
+    if (settings.doWipeSwap) {
+        child_process.exec(settings.wipeSwapCmd!);
+    }
+
+    /// Shut Down...
+    if (settings.shutDown) {
+        /// Power off the computer.
+        child_process.exec('poweroff -f');
+    }
+
+    // TODO: sys.exit(0)
+}
+
+/// Loads a settings object from a json file.
+const loadSettings = (filename: string): Settings => {
+    const file = fs.readFileSync(filename);
+    return JSON.parse(file.toString());
+}
+
+const lsusb = (): string => {
+    return child_process.execSync('lsusb').toString();
+}
+
+interface Device {
+    raw: string,
+    id: string,
+}
+
+/// 
+export class DeviceTracker {
+    private settings: Settings;
+
+    private startDevices: Device[] = [];
+    private whitelist: Device[] = [];
+
+    /**
+     * Starts the main loop that checks usb devices every `sleepTime` seconds and kills
+     * the computer. Allows only whitelisted usb devices to connect. Does not allow
+     * any usb devices that were connected at the start to be removed.
+     */
+    start() {
+        this.startDevices = this.lsusb();
+        this.whitelist = this.startDevices + this.settings.whitelist;
+
+        const msg = `[INFO] Started patrolling the USB ports every ${this.settings.sleepTime} seconds...`;
+        log(this.settings, msg);
+        console.log(msg);
+
+        setInterval(() => this.loop(), this.settings.sleepTime);
+    }
+
+    private loop() {
+        const currentDevices = this.lsusb();
+        
+        /// Checks that all devices are on the whitelist.
+        currentDevices.forEach((device) => {
+            if (!device as any in this.whitelist) {
+                this.killComputer(this.settings);
+            }
+        });
+
+        /// Checks that all start devices have not been removed.
+        this.startDevices.forEach((device) => {
+            if (!device as any in currentDevices) {
+                // A device has disappeared.
+                this.killComputer(this.settings);
+            }
+        });
+
+        if (currentDevices.length > this.whitelist.length || currentDevices.length < this.startDevices.length) {
+            /// Lengths should never exceed the number of allowed devices or fall below the number of start devices.
+            this.killComputer(this.settings);
+        }
+    }
+
+
+    lsusb(): Device[] {
+        let rawDeviceList = child_process.execSync('lsusb').toString().split('\n');
+        return this.processRawDevices(rawDeviceList);
+    }
+
+    private processRawDevices(rawDeviceList: string[]): Device[] {
+        /// I'll implement this later
+    }
+
+    private log = (settings: Settings, msg: string) => {
+        const logFile = settings.logFile;
     
+        const contents = `\n${ new Date().toUTCString() } ${msg}\nCurrent state:\n`;
+        let file = fs.openSync(logFile, 'a+');
+        fs.writeFileSync(file, contents);
+    
+        /// Logs the current USB state.
+        child_process.exec(`lsusb >> ${logFile}`);
+    }
 }
 
 
-log({logFile: 'hell0'}, 'hiiii');
+let s: string = 'Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub';
+console.log(s.substr(s.indexOf(' ID ') + 4, 9))
+
+/// TODO: Remove the postfix operators everywhere.
+// let usbkill = new DeviceTracker();
+// usbkill.start();
