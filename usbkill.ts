@@ -29,10 +29,10 @@ const SETTINGS_FILE = '/etc/usbkill.ini';
 const help_message = `
 usbkill is a simple program with one goal: quickly shutdown the computer when a USB is inserted or removed.
 Events are logged in /var/log/usbkill/kills.log
-You can configure a whitelist of USB ids that are acceptable to insert and the remove.
+You can configure a whitelist of USB ids that are acceptable to insert and to remove.[not implemented]
 The USB id can be found by running the command 'lsusb'.
 Settings can be changed in /etc/usbkill.ini
-In order to be able to shutdown the computer, this program needs to run as root.
+In order to be able to shutdown the computer the program needs to be run as root.
 
 Options:
   -h --help:         Show this help

@@ -1,7 +1,7 @@
 {
   "name": "usbkill",
   "version": "1.0.0",
-  "description": "A typescript / javscript port of << usbkill >>",
+  "description": "A typescript port of << usbkill >>",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,7 +10,7 @@
     "usbkill",
     "security"
   ],
-  "author": "lsaether",
+  "author": "airwavves",
   "license": "GPL-3.0",
   "dependencies": {
     "@types/node": "^8.0.47"

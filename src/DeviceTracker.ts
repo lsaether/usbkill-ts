@@ -155,14 +155,6 @@ export class DeviceTracker {
         return rawDeviceList;
     }
 
-    private processRawDevices(rawDeviceList: string[]): Device[] {
-        let devices: Device[] = [];
-        rawDeviceList.forEach((rawDevice) => {
-            devices.push({raw: rawDevice});
-        });
-        return devices;
-    }
-
     private log(msg: string): void {
         const logFile = this.settings.logFile;
     
