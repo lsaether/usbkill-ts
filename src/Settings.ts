@@ -1,4 +1,5 @@
-/// The settings file.
+/// The interface of the Settings file.
+
 export interface Settings {
     logFile: string,
     removeFileCmd?: string,

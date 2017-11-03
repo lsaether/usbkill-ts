@@ -6,21 +6,22 @@ import * as process from 'process';
 
 import { Settings } from './Settings';
 
-interface Device {
-    raw: string,
-    id: string,
-}
-
 export class DeviceTracker {
     private settings: Settings;
+    private settingsFile: string;
     private settingsLoaded: boolean = false;
 
-    private startDevices: Device[] = [];
-    private whitelist: Device[] = [];
+    private startDevices: string[] = [];
+    private whitelist: string[] = [];
 
-    constructor(settings?: string) {
+    private testmode: boolean = false;
+
+    constructor(settings?: string, testmode?: boolean) {
         if (settings !== undefined) {
             this.loadSettings(settings);
+        }
+        if (testmode !== undefined) {
+            this.testmode = testmode;
         }
     }
 
@@ -28,6 +29,7 @@ export class DeviceTracker {
     public loadSettings(filename: string): boolean {
         const file = fs.readFileSync(filename);
         this.settings = JSON.parse(file.toString());
+        this.settingsFile = filename;
         this.settingsLoaded = true;
         return true;
     }
@@ -45,7 +47,7 @@ export class DeviceTracker {
         this.startDevices = this.lsusb();
         this.startDevices.forEach((device) => this.whitelist.push(device));
 
-        const msg = `[INFO] Started patrolling the USB ports every ${this.settings.sleepTime} seconds...`;
+        const msg = `[INFO] Started patrolling the USB ports every ${this.settings.sleepTime} milliseconds...`;
         this.log(msg);
         console.log(msg);
 
@@ -53,12 +55,16 @@ export class DeviceTracker {
     }
 
     private loop() {
-        const currentDevices = this.lsusb();
+        const currentDevices: string[] = this.lsusb();
         
         /// Checks that all devices are on the whitelist.
         currentDevices.forEach((device) => {
             if (this.whitelist.indexOf(device) === -1) {
-                this.killComputer(this.settings);
+                if (this.testmode) {
+                    this.testKillComputer();
+                } else {
+                    this.killComputer();
+                }
             }
         });
 
@@ -66,17 +72,29 @@ export class DeviceTracker {
         this.startDevices.forEach((device) => {
             if (currentDevices.indexOf(device) === -1) {
                 // A device has disappeared.
-                this.killComputer(this.settings);
+                if (this.testmode) {
+                    this.testKillComputer();
+                } else {
+                    this.killComputer();
+                }
             }
         });
 
         if (currentDevices.length > this.whitelist.length || currentDevices.length < this.startDevices.length) {
             /// Lengths should never exceed the number of allowed devices or fall below the number of start devices.
-            this.killComputer(this.settings);
+            if (this.testmode) {
+                this.testKillComputer();
+            } else {
+                this.killComputer();
+            }
         }
     }
 
-    private killComputer = () => {
+    private testKillComputer(): void {
+        console.log("DEAD!!");
+    }
+
+    private killComputer(): void {
         /// Log what is happening.
         if (!this.settings.meltUsbKill) {
             /// Don't waste time logging what will be destroyed.
@@ -110,17 +128,15 @@ export class DeviceTracker {
             /// Power off the computer.
             child_process.exec('poweroff -f');
         }
-    
-        // TODO: sys.exit(0)
     }
 
-    private shred = () => {
+    private shred(): void {
         const shredder = this.settings.removeFileCmd;
     
         /// List logs and settings to be removed.
         if (this.settings.meltUsbKill) {
             this.settings.foldersToRemove!.push(path.dirname(this.settings.logFile));
-            this.settings.foldersToRemove!.push(path.dirname(SETTINGS_FILE));
+            this.settings.foldersToRemove!.push(path.dirname(this.settingsFile));
             // TODO change this to the entire folder.
             const usbKillFile = path.dirname(process.mainModule!.filename);
             this.settings.foldersToRemove!.push(usbKillFile);
@@ -128,21 +144,26 @@ export class DeviceTracker {
     
         /// Remove files and folders.
         this.settings.foldersToRemove!.forEach((file) => {
-            child_process.exec(`rm -r ${file}`);
+            // child_process.exec(`rm -r ${file}`);
+            console.log(file);
         })
     }
 
 
-    lsusb(): Device[] {
-        let rawDeviceList = child_process.execSync('lsusb').toString().split('\n');
-        return this.processRawDevices(rawDeviceList);
+    public lsusb(): string[] {
+        const rawDeviceList = child_process.execSync('lsusb').toString().split('\n');
+        return rawDeviceList;
     }
 
     private processRawDevices(rawDeviceList: string[]): Device[] {
-        /// I'll implement this later
+        let devices: Device[] = [];
+        rawDeviceList.forEach((rawDevice) => {
+            devices.push({raw: rawDevice});
+        });
+        return devices;
     }
 
-    private log = (msg: string) => {
+    private log(msg: string): void {
         const logFile = this.settings.logFile;
     
         const contents = `\n${ new Date().toUTCString() } ${msg}\nCurrent state:\n`;

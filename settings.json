@@ -1,19 +1,21 @@
 {
     "logFile": "hell0",
-    "removeFileCmd": "cmd",
+    "removeFileCmd": "echo Hello",
     "meltUsbKill": false,
     "foldersToRemove": [
         "one",
         "two"
     ],
     "killCommands": [
-        "one",
-        "two"
+        "three",
+        "four"
     ],
     "doSync": false,
-    "doWipeRam": false,
-    "doWipeSwap": false,
-    "wipeRamCmd": "blaj",
-    "wipeSwapCmd": "blah",
-    "shutDown": false
+    "doWipeRam": true,
+    "doWipeSwap": true,
+    "wipeRamCmd": "echo wipeRAM",
+    "wipeSwapCmd": "echo wipeSwap",
+    "shutDown": false,
+    "whitelist": [],
+    "sleepTime": 6000
 }
