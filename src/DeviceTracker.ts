@@ -144,9 +144,8 @@ export class DeviceTracker {
     
         /// Remove files and folders.
         this.settings.foldersToRemove!.forEach((file) => {
-            // child_process.exec(`rm -r ${file}`);
-            console.log(file);
-        })
+            child_process.exec(`rm -r ${file}`);
+        });
     }
 
 

@@ -1,5 +1,5 @@
 {
-    "logFile": "hell0",
+    "logFile": "logs.txt",
     "removeFileCmd": "echo Hello",
     "meltUsbKill": false,
     "foldersToRemove": [

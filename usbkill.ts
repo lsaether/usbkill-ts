@@ -26,20 +26,17 @@ if (CURRENT_PLATFORM !== 'LINUX') {
 
 const SETTINGS_FILE = '/etc/usbkill.ini';
 
-const help_message = `
-usbkill is a simple program with one goal: quickly shutdown the computer when a USB is inserted or removed.
+const helpMessage = `
+usbkill is a simple program with one goal: quickly shutdown the computer when a USB is inserted or removed
 Events are logged in /var/log/usbkill/kills.log
-You can configure a whitelist of USB ids that are acceptable to insert and to remove.[not implemented]
-The USB id can be found by running the command 'lsusb'.
+The USB id can be found by running the command 'lsusb'
 Settings can be changed in /etc/usbkill.ini
-In order to be able to shutdown the computer the program needs to be run as root.
+In order to be able to shutdown the computer the program needs to be run as root
 
 Options:
   -h --help:         Show this help
      --version:      Print usbkill version and exit
-     --cs:           Copy program folder usbkill.ini to /etc/usbkill/usbkill.ini
-     --no-shut-down: Execute all the (destructive) commands you defined in usbkill.ini,
-                       but don't turn off the computer
+     --noTest:       Turns off testing. WILL TURN YOUR COMPUTER OFF AND MELT THIS FILE.
 `
 const splash = () => {
     console.log(`
@@ -52,3 +49,20 @@ const splash = () => {
     `);
 }
 
+/// Runs
+if (process.argv[2] == '--help') {
+    console.log(helpMessage);
+}
+if (process.argv[2] == '--version') {
+    console.log('usbkill-ts v0.1.0');
+}
+if (process.argv[2] == '--noTest') {
+    splash();
+    let usbkill = new DeviceTracker('settings.json', false);
+    usbkill.start();
+} else {
+    splash();
+    console.log('[TESTING]\n')
+    let testUsbkill = new DeviceTracker('settings.json', true);
+    testUsbkill.start();
+}
